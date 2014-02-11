@@ -24,71 +24,6 @@ var lsr = require('lsr');
 module.exports = requires;
 
 /**
- * Find all local files the file at `path` requires.
- *
- * @param {String} path
- * @param {Function} fn
- * @api private
- */
-
-function localRequires(path, fn){
-  fs.readFile(path, 'utf8', function(err, src){
-    if (err) return fn(err);
-    
-    var reqs = mine(src)
-      .map(prop('name'))
-      .filter(local)
-      .filter(unique);
-    
-    var batch = new Batch;
-    reqs.forEach(function(name){
-      batch.push(function(done){
-        resolve(name, { basedir: dirname(path) }, done);
-      });
-    });
-    batch.end(function(err, resolved){
-      if (err) return fn(err);
-      
-      batch = new Batch;
-      resolved.forEach(function(loc){
-        batch.push(function(done){
-          localRequires(loc, done);
-        });
-      });
-      batch.end(function(err, res){
-        res.forEach(function(_resolved){
-          resolved = resolved.concat(_resolved);
-        });
-        fn(null, resolved.filter(unique));
-      });
-    });
-  });
-}
-
-function moduleDepsOf(files, fn){
-  var batch = new Batch;
-  files.forEach(function(path){
-    batch.push(function(done){
-      fs.readFile(path, 'utf8', done);
-    });
-  });
-  batch.end(function(err, sources){
-    if (err) return fn(err);
-    
-    var reqs = [];
-    
-    sources.forEach(function(source){
-      reqs = reqs.concat(mine(source)
-      .map(prop('name'))
-      .filter(not(local))
-      .filter(not(builtin)));
-    });
-    
-    fn(null, reqs.filter(unique));
-  });
-}
-
-/**
  * Find all node modules the module in `path` requires.
  *
  * @param {String} path
@@ -196,6 +131,78 @@ function requires(path, fn){
         });
       });
     });
+  });
+}
+
+/**
+ * Find all local files the file at `path` requires.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ * @api private
+ */
+
+function localRequires(path, fn){
+  fs.readFile(path, 'utf8', function(err, src){
+    if (err) return fn(err);
+
+    var reqs = mine(src)
+      .map(prop('name'))
+      .filter(local)
+      .filter(unique);
+
+    var batch = new Batch;
+    reqs.forEach(function(name){
+      batch.push(function(done){
+        resolve(name, { basedir: dirname(path) }, done);
+      });
+    });
+    batch.end(function(err, resolved){
+      if (err) return fn(err);
+
+      batch = new Batch;
+      resolved.forEach(function(loc){
+        batch.push(function(done){
+          localRequires(loc, done);
+        });
+      });
+      batch.end(function(err, res){
+        res.forEach(function(_resolved){
+          resolved = resolved.concat(_resolved);
+        });
+        fn(null, resolved.filter(unique));
+      });
+    });
+  });
+}
+
+/**
+ * Find all node modules `files` depend upon.
+ *
+ * @param {Array} filter
+ * @param {Function} fn
+ * @api private
+ */
+
+function moduleDepsOf(files, fn){
+  var deps = [];
+  var batch = new Batch;
+  files.forEach(function(path){
+    batch.push(function(done){
+      fs.readFile(path, 'utf8', function(err, source){
+        if (err) return done(err);
+        var reqs = mine(source)
+          .map(prop('name'))
+          .filter(not(local))
+          .filter(not(builtin));
+        deps = deps.concat(reqs);
+        done();
+      });
+    });
+  });
+  batch.end(function(err, sources){
+    if (err) return fn(err);
+    fn(null, deps.filter(unique));
   });
 }
 
