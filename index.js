@@ -152,6 +152,7 @@ function localRequires(path, fn){
       })
       .map(prop('name'))
       .filter(unique);
+    if (!reqs.length) return fn(null, []);
 
     var batch = new Batch;
     reqs.forEach(function(name){
@@ -169,6 +170,7 @@ function localRequires(path, fn){
         });
       });
       batch.end(function(err, res){
+        if (err) return fn(err);
         res.forEach(function(_resolved){
           resolved = resolved.concat(_resolved);
         });
