@@ -16,6 +16,7 @@ var resolve = require('resolve');
 var presolve = require('path').resolve;
 var entries = require('entry-points');
 var lsr = require('lsr');
+var debug = require('debug')('module-requires');
 
 /**
  * Expose `requires`.
@@ -45,6 +46,7 @@ function requires(path, fn){
     entries(path, function(err, mains){
       if (err) return fn(err);
       
+      debug('mains: %j', mains);
       mains = mains.map(function(main){
         return presolve(join(path, main));
       });
@@ -154,6 +156,7 @@ function localRequires(path, fn){
       })
       .map(prop('name'))
       .filter(unique);
+    debug('%s requires %j', path, reqs);
     if (!reqs.length) return fn(null, []);
 
     var batch = new Batch;
