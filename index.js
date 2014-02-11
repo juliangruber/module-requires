@@ -15,6 +15,7 @@ var basename = require('path').basename;
 var resolve = require('resolve');
 var presolve = require('path').resolve;
 var entries = require('entry-points');
+var lsr = require('lsr');
 
 /**
  * Expose `requires`.
@@ -65,47 +66,24 @@ function localRequires(path, fn){
 }
 
 function jsFiles(path, fn){
-  fs.readdir(path, function(err, files){
+  function filter(p){
+    return !/node_modules|components$/.test(p);
+  }
+  
+  lsr(path, { filterPath: filter }, function(err, files){
     if (err) return fn(err);
     
-    files = files.map(function(file){
+    var js = files
+    .map(prop('path'))
+    .map(function(file){
       return presolve(join(path, file));
-    });
+    })
+    .filter(function(file){
+      return /\.js$/.test(file);
+    })
+    .filter(unique);
     
-    var batch = new Batch;
-    files.forEach(function(file){
-      batch.push(function(done){
-        fs.stat(file, done);
-      });
-    });
-    batch.end(function(err, stats){
-      if (err) return fn(err);
-      
-      var js = files.filter(function(file){
-        return /\.js$/.test(file);
-      });
-      
-      var dirs = files.filter(function(file, i){
-        return stats[i].isDirectory() && [
-          'node_modules', 'components', 'fixtures', 'fixture'
-        ].indexOf(basename(file)) == -1;
-      });
-      
-      batch = new Batch;
-      dirs.forEach(function(dir){
-        batch.push(function(done){
-          jsFiles(dir, done);
-        });
-      });
-      batch.end(function(err, res){
-        if (err) return fn(err);
-        res.forEach(function(files){
-          js = js.concat(files);
-        });
-        
-        fn(null, js);
-      });
-    });
+    fn(null, js);
   });
 }
 
@@ -141,9 +119,6 @@ function moduleDepsOf(files, fn){
  */
 
 function requires(path, fn){
-
-  // package
-  
   fs.readFile(join(path, 'package.json'), function(err, json){
     if (err) return fn(err);
     var pkg = JSON.parse(json);
