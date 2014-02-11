@@ -159,11 +159,17 @@ function localRequires(path, fn){
     var batch = new Batch;
     reqs.forEach(function(name){
       batch.push(function(done){
-        resolve(name, { basedir: dirname(path) }, done);
+        resolve(name, {
+          basedir: dirname(path),
+          extensions: ['.js', '.json']
+        }, function(err, dest){
+          done(null, dest);
+        });
       });
     });
     batch.end(function(err, resolved){
       if (err) return fn(err);
+      resolved = resolved.filter(Boolean);
 
       batch = new Batch;
       resolved.forEach(function(loc){
