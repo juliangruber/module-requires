@@ -86,7 +86,7 @@ function jsFiles(path, fn){
       
       var dirs = files.filter(function(file, i){
         return stats[i].isDirectory() && [
-          'node_modules', 'components'
+          'node_modules', 'components', 'fixtures', 'fixture'
         ].indexOf(basename(file)) == -1;
       });
       
@@ -146,22 +146,54 @@ function requires(path, fn){
   // find js files reachable from main
   // traverse all js files for requires
   
-  // main
+  // package
   
-  resolve('./', { basedir: path }, function(err, main){
+  fs.readFile(join(path, 'package.json'), function(err, json){
     if (err) return fn(err);
+    var pkg = JSON.parse(json);
     
-    // local files required from main
+    var mains = [];
     
-    localRequires(main, function(err, local){
+    // node main
+    
+    mains.push(presolve(join(path, pkg.main || 'index.js')));
+    if (!/\.js$/.test(mains[0])) mains[0] += '.js';
+    
+    // bins
+    
+    if (pkg.bin) Object.keys(pkg.bin).forEach(function(name){
+      mains.push(presolve(join(path, pkg.bin[name])));
+    });
+    
+    // local files required from mains
+    
+    var batch = new Batch;
+    
+    mains.forEach(function(_main){
+      batch.push(function(done){
+        localRequires(_main, done);
+      });
+    });
+    
+    batch.end(function(err, res){
       if (err) return fn(err);
       
-      local.unshift(main);
+      var local = [];
+      res.forEach(function(_local){
+        local = local.concat(_local);
+      });
+      local = mains
+        .concat(local)
+        .filter(unique);
       
       // all js files
       
       jsFiles(path, function(err, files){
         if (err) return fn(err);
+        
+        // add bins, json etc
+        
+        files = files.concat(local).filter(unique);
         
         // main deps
         
@@ -176,43 +208,36 @@ function requires(path, fn){
             // dev deps
             
             var devDeps = allDeps.filter(not(isIn(deps)));
+             
+            // obsolete deps
             
-            // package.json
+            var obsolete = keys(pkg.dependencies)
+              .concat(keys(pkg.devDependencies || {}))
+              .filter(unique)
+              .filter(not(isIn(allDeps)));
             
-            fs.readFile(join(path, 'package.json'), function(err, json){
-              if (err) return fn(err);
-              var pkg = JSON.parse(json);
+            // missplaced deps
+            
+            var missplacedDeps = keys(pkg.dependencies)
+              .filter(unique)
+              .filter(not(isIn(obsolete)))
+              .filter(not(isIn(deps)));
+             
+            // missplaced dev deps
               
-              // obsolete deps
-              
-              var obsolete = keys(pkg.dependencies)
-                .concat(keys(pkg.devDependencies || {}))
-                .filter(unique)
-                .filter(not(isIn(allDeps)));
-              
-              // missplaced deps
-              
-              var missplacedDeps = keys(pkg.dependencies)
-                .filter(unique)
-                .filter(not(isIn(obsolete)))
-                .filter(not(isIn(deps)));
-               
-              // missplaced dev deps
-                
-              var missplacedDevDeps = keys(pkg.devDependencies || {})
-                .filter(unique)
-                .filter(not(isIn(obsolete)))
-                .filter(not(isIn(devDeps)));
-              
-              fn(null, {
-                main: local,
-                all: files,
-                deps: deps,
-                devDeps: devDeps,
-                obsolete: obsolete,
-                missplacedDeps: missplacedDeps,
-                missplacedDevDeps: missplacedDevDeps
-              });
+            var missplacedDevDeps = keys(pkg.devDependencies || {})
+              .filter(unique)
+              .filter(not(isIn(obsolete)))
+              .filter(not(isIn(devDeps)));
+            
+            fn(null, {
+              main: local,
+              all: files,
+              deps: deps,
+              devDeps: devDeps,
+              obsolete: obsolete,
+              missplacedDeps: missplacedDeps,
+              missplacedDevDeps: missplacedDevDeps
             });
           });
         });
