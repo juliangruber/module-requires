@@ -154,7 +154,10 @@ function requires(path, fn){
             var obsolete = keys(pkg.dependencies)
               .concat(keys(pkg.devDependencies || {}))
               .filter(unique)
-              .filter(not(isIn(allDeps)));
+              .filter(not(isIn(allDeps)))
+              .filter(function(name){
+                return name != 'mocha';
+              });
             
             // missplaced deps
             
