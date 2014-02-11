@@ -99,7 +99,13 @@ function moduleDepsOf(files, fn){
 function requires(path, fn){
   fs.readFile(join(path, 'package.json'), function(err, json){
     if (err) return fn(err);
+    
+    // package
+    
     var pkg = JSON.parse(json);
+    var pkgDeps = Object.keys(pkg.dependencies || {}).filter(unique);
+    var pkgDevDeps = Object.keys(pkg.devDependencies || {}).filter(unique);
+    var pkgAllDeps = pkgDeps.concat(pkgDevDeps).filter(unique)
     
     var mains = entries(pkg).map(function(entry){
       return presolve(join(path, entry));
@@ -135,25 +141,29 @@ function requires(path, fn){
         
         files = files.concat(local).filter(unique);
         
-        // main deps
+        // all deps
         
-        moduleDepsOf(local, function(err, deps){
+        moduleDepsOf(files, function(err, allDeps){
           if (err) return fn(err);
           
-          // all deps
+          // main deps
           
-          moduleDepsOf(files, function(err, allDeps){
+          moduleDepsOf(local, function(err, deps){
             if (err) return fn(err);
             
             // dev deps
             
             var devDeps = allDeps.filter(not(isIn(deps)));
              
+            // filter out components etc.
+            
+            allDeps = allDeps.filter(isIn(pkgAllDeps));
+            deps = deps.filter(isIn(allDeps));
+            devDeps = devDeps.filter(isIn(allDeps));
+             
             // obsolete deps
             
-            var obsolete = keys(pkg.dependencies)
-              .concat(keys(pkg.devDependencies || {}))
-              .filter(unique)
+            var obsolete = pkgAllDeps
               .filter(not(isIn(allDeps)))
               .map(function(name){
                 return ['mocha', 'jade', 'should'].indexOf(name) > -1
@@ -163,15 +173,13 @@ function requires(path, fn){
             
             // missplaced deps
             
-            var missplacedDeps = keys(pkg.dependencies)
-              .filter(unique)
+            var missplacedDeps = pkgDeps
               .filter(isIn(allDeps))
               .filter(not(isIn(deps)));
              
             // missplaced dev deps
               
-            var missplacedDevDeps = keys(pkg.devDependencies || {})
-              .filter(unique)
+            var missplacedDevDeps = pkgDevDeps
               .filter(isIn(allDeps))
               .filter(not(isIn(devDeps)));
             
