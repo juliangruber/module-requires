@@ -160,14 +160,14 @@ function requires(path, fn){
             
             var missplacedDeps = keys(pkg.dependencies)
               .filter(unique)
-              .filter(not(isIn(obsolete)))
+              .filter(isIn(allDeps))
               .filter(not(isIn(deps)));
              
             // missplaced dev deps
               
             var missplacedDevDeps = keys(pkg.devDependencies || {})
               .filter(unique)
-              .filter(not(isIn(obsolete)))
+              .filter(isIn(allDeps))
               .filter(not(isIn(devDeps)));
             
             fn(null, {
