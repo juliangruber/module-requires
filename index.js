@@ -147,8 +147,10 @@ function localRequires(path, fn){
     if (err) return fn(err);
 
     var reqs = mine(src)
+      .filter(function(entry){
+        return local(entry.name);
+      })
       .map(prop('name'))
-      .filter(local)
       .filter(unique);
 
     var batch = new Batch;
