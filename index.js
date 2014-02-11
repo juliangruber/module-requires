@@ -233,6 +233,14 @@ function requires(path, fn){
   });
 }
 
+/**
+ * Check if `el` is in `arr`.
+ *
+ * @param {Array} arr
+ * @return {Function}
+ * @api private
+ */
+
 function isIn(arr){
   return function(el){
     return arr.indexOf(el) > -1;
