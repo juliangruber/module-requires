@@ -37,8 +37,8 @@ function localRequires(path, fn){
     
     var reqs = mine(src)
       .map(prop('name'))
-      .filter(unique)
-      .filter(local);
+      .filter(local)
+      .filter(unique);
     
     var batch = new Batch;
     reqs.forEach(function(name){
