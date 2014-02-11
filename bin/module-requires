@@ -2,7 +2,9 @@
 
 var requires = require('..');
 
-requires('.', function(err, res){
+var dir = process.argv[2] || '.';
+
+requires(dir, function(err, res){
   if (err) throw err;
   console.log(res);
 });
