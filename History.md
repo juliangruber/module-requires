@@ -1,4 +1,13 @@
 
+0.2.0 / 2014-02-11 
+==================
+
+ * fix for circular dependencies
+ * add some debug
+ * swallow individual resolve errors
+ * ignore require(lib-cov)
+ * update entry-points
+
 0.1.0 / 2014-02-11 
 ==================
 
