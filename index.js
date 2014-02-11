@@ -226,9 +226,8 @@ function jsFiles(path, fn){
     .filter(function(stat){
       return /\.js$/.test(stat.path);
     })
-    .map(prop('path'))
     .map(function(file){
-      return presolve(join(path, file));
+      return presolve(join(path, file.path));
     });
 
     fn(null, js);
