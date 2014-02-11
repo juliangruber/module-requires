@@ -119,10 +119,10 @@ function requires(path, fn){
               .filter(not(isIn(devDeps)));
             
             fn(null, {
-              main: local,
-              all: files,
-              deps: deps,
-              devDeps: devDeps,
+              /* main: local, */
+              /* all: files, */
+              /* deps: deps, */
+              /* devDeps: devDeps, */
               obsolete: obsolete,
               missplacedDeps: missplacedDeps,
               missplacedDevDeps: missplacedDevDeps
