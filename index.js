@@ -141,12 +141,7 @@ function moduleDepsOf(files, fn){
  */
 
 function requires(path, fn){
-  var deps = {};
-  var devdeps = {};
-  
-  // find js files reachable from main
-  // traverse all js files for requires
-  
+
   // package
   
   fs.readFile(join(path, 'package.json'), function(err, json){
