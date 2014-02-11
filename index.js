@@ -14,6 +14,7 @@ var dirname = require('path').dirname;
 var basename = require('path').basename;
 var resolve = require('resolve');
 var presolve = require('path').resolve;
+var entries = require('entry-points');
 
 /**
  * Expose `requires`.
@@ -152,17 +153,8 @@ function requires(path, fn){
     if (err) return fn(err);
     var pkg = JSON.parse(json);
     
-    var mains = [];
-    
-    // node main
-    
-    mains.push(presolve(join(path, pkg.main || 'index.js')));
-    if (!/\.js$/.test(mains[0])) mains[0] += '.js';
-    
-    // bins
-    
-    if (pkg.bin) Object.keys(pkg.bin).forEach(function(name){
-      mains.push(presolve(join(path, pkg.bin[name])));
+    var mains = entries(pkg).map(function(entry){
+      return presolve(join(path, entry));
     });
     
     // local files required from mains
