@@ -1,6 +1,6 @@
 {
   "name": "module-requires",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "repository": "segmentio/module-requires",
   "license": "MIT",
   "dependencies": {
