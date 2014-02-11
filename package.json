@@ -12,5 +12,8 @@
     "graceful-fs": "~2.0.1",
     "entry-points": "0.0.0",
     "lsr": "~1.0.0"
+  },
+  "bin": {
+    "module-requires": "bin/module-requires"
   }
 }
