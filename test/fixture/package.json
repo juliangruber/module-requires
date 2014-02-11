@@ -1,0 +1,7 @@
+{
+  "name": "fixture",
+  "main": "main.js",
+  "dependencies": {
+    "resolve": "~0.6.1"
+  }
+}

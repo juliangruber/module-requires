@@ -1,0 +1,14 @@
+{
+  "name": "module-requires",
+  "version": "0.0.0",
+  "repository": "segmentio/module-requires",
+  "license": "MIT",
+  "dependencies": {
+    "builtins": "0.0.2",
+    "mine": "0.0.1",
+    "to-function": "~1.2.0",
+    "batch": "~0.5.0",
+    "resolve": "~0.6.1",
+    "graceful-fs": "~2.0.1"
+  }
+}
