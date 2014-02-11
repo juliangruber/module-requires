@@ -65,28 +65,6 @@ function localRequires(path, fn){
   });
 }
 
-function jsFiles(path, fn){
-  function filter(p){
-    return !/node_modules|components$/.test(p);
-  }
-  
-  lsr(path, { filterPath: filter }, function(err, files){
-    if (err) return fn(err);
-    
-    var js = files
-    .map(prop('path'))
-    .map(function(file){
-      return presolve(join(path, file));
-    })
-    .filter(function(file){
-      return /\.js$/.test(file);
-    })
-    .filter(unique);
-    
-    fn(null, js);
-  });
-}
-
 function moduleDepsOf(files, fn){
   var batch = new Batch;
   files.forEach(function(path){
@@ -205,6 +183,36 @@ function requires(path, fn){
         });
       });
     });
+  });
+}
+
+/**
+ * Find all .js files in `path`, except node_modules and components.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ * @api private
+ */
+
+function jsFiles(path, fn){
+  function filter(p){
+    return !/node_modules|components$/.test(p);
+  }
+
+  lsr(path, { filterPath: filter }, function(err, files){
+    if (err) return fn(err);
+
+    var js = files
+    .map(prop('path'))
+    .map(function(file){
+      return presolve(join(path, file));
+    })
+    .filter(function(file){
+      return /\.js$/.test(file);
+    })
+    .filter(unique);
+
+    fn(null, js);
   });
 }
 
