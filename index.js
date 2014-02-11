@@ -189,25 +189,24 @@ function localRequires(path, fn){
  */
 
 function moduleDepsOf(files, fn){
-  var deps = [];
+  var deps = {};
   var batch = new Batch;
   files.forEach(function(path){
     batch.push(function(done){
       fs.readFile(path, 'utf8', function(err, source){
         if (err) return done(err);
-        var reqs = mine(source)
-          .filter(function(entry){
-            return !local(entry.name) && !builtin(entry.name);
-          })
-          .map(prop('name'))
-        deps = deps.concat(reqs);
+        mine(source).forEach(function(entry){
+          if (!local(entry.name) && !builtin(entry.name)) {
+            deps[entry.name] = true;
+          }
+        });
         done();
       });
     });
   });
   batch.end(function(err, sources){
     if (err) return fn(err);
-    fn(null, deps.filter(unique));
+    fn(null, Object.keys(deps));
   });
 }
 
@@ -227,12 +226,11 @@ function jsFiles(path, fn){
   lsr(path, { filterPath: filter }, function(err, files){
     if (err) return fn(err);
 
-    var js = files
-    .filter(function(stat){
-      return /\.js$/.test(stat.path);
-    })
-    .map(function(file){
-      return presolve(join(path, file.path));
+    var js = [];
+    files.forEach(function(stat){
+      if (/\.js$/.test(stat.path)) {
+        js.push(presolve(join(path, stat.path)));
+      }
     });
 
     fn(null, js);
