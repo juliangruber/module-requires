@@ -208,14 +208,13 @@ function jsFiles(path, fn){
     if (err) return fn(err);
 
     var js = files
+    .filter(function(stat){
+      return /\.js$/.test(stat.path);
+    })
     .map(prop('path'))
     .map(function(file){
       return presolve(join(path, file));
-    })
-    .filter(function(file){
-      return /\.js$/.test(file);
-    })
-    .filter(unique);
+    });
 
     fn(null, js);
   });
