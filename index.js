@@ -42,90 +42,92 @@ function requires(path, fn){
     var pkgDevDeps = Object.keys(pkg.devDependencies || {}).filter(unique);
     var pkgAllDeps = pkgDeps.concat(pkgDevDeps).filter(unique)
     
-    var mains = entries(pkg).map(function(entry){
-      return presolve(join(path, entry));
-    });
-    
-    // local files required from mains
-    
-    var batch = new Batch;
-    
-    mains.forEach(function(_main){
-      batch.push(function(done){
-        localRequires(_main, done);
-      });
-    });
-    
-    batch.end(function(err, res){
+    entries(path, function(err, mains){
       if (err) return fn(err);
       
-      var local = [];
-      res.forEach(function(_local){
-        local = local.concat(_local);
+      mains = mains.map(function(main){
+        return presolve(join(path, main));
       });
-      local = mains
-        .concat(local)
-        .filter(unique);
       
-      // all js files
+      // local files required from mains
       
-      jsFiles(path, function(err, files){
+      var batch = new Batch;
+      
+      mains.forEach(function(_main){
+        batch.push(function(done){
+          localRequires(_main, done);
+        });
+      });
+      
+      batch.end(function(err, res){
         if (err) return fn(err);
         
-        // add bins, json etc
+        var local = [];
+        res.forEach(function(_local){
+          local = local.concat(_local);
+        });
+        local = mains
+          .concat(local)
+          .filter(unique);
         
-        files = files.concat(local).filter(unique);
+        // all js files
         
-        // all deps
-        
-        moduleDepsOf(files, function(err, allDeps){
+        jsFiles(path, function(err, files){
           if (err) return fn(err);
           
-          // main deps
+          // add bins, json etc
           
-          moduleDepsOf(local, function(err, deps){
+          files = files.concat(local).filter(unique);
+          
+          // all deps
+          
+          moduleDepsOf(files, function(err, allDeps){
             if (err) return fn(err);
             
-            // dev deps
+            // main deps
             
-            var devDeps = allDeps.filter(not(isIn(deps)));
-             
-            // filter out components etc.
-            
-            allDeps = allDeps.filter(isIn(pkgAllDeps));
-            deps = deps.filter(isIn(allDeps));
-            devDeps = devDeps.filter(isIn(allDeps));
-             
-            // obsolete deps
-            
-            var obsolete = pkgAllDeps
-              .filter(not(isIn(allDeps)))
-              .map(function(name){
-                return ['mocha', 'jade', 'should'].indexOf(name) > -1
-                  ? '(' + name + ')'
-                  : name;
-              });
-            
-            // missplaced deps
-            
-            var missplacedDeps = pkgDeps
-              .filter(isIn(allDeps))
-              .filter(not(isIn(deps)));
-             
-            // missplaced dev deps
+            moduleDepsOf(local, function(err, deps){
+              if (err) return fn(err);
               
-            var missplacedDevDeps = pkgDevDeps
-              .filter(isIn(allDeps))
-              .filter(not(isIn(devDeps)));
-            
-            fn(null, {
-              /* main: local, */
-              /* all: files, */
-              /* deps: deps, */
-              /* devDeps: devDeps, */
-              obsolete: obsolete,
-              missplacedDeps: missplacedDeps,
-              missplacedDevDeps: missplacedDevDeps
+              // dev deps
+              
+              var devDeps = allDeps.filter(not(isIn(deps)));
+               
+              // filter out components etc.
+              
+              allDeps = allDeps.filter(isIn(pkgAllDeps));
+              deps = deps.filter(isIn(allDeps));
+              devDeps = devDeps.filter(isIn(allDeps));
+               
+              // obsolete deps
+              
+              var obsolete = pkgAllDeps
+                .filter(not(isIn(allDeps)))
+                .filter(function(name){
+                  return ['mocha', 'should'].indexOf(name) == -1;
+                });
+              
+              // missplaced deps
+              
+              var missplacedDeps = pkgDeps
+                .filter(isIn(allDeps))
+                .filter(not(isIn(deps)));
+               
+              // missplaced dev deps
+                
+              var missplacedDevDeps = pkgDevDeps
+                .filter(isIn(allDeps))
+                .filter(not(isIn(devDeps)));
+              
+              fn(null, {
+                /* main: local, */
+                /* all: files, */
+                /* deps: deps, */
+                /* devDeps: devDeps, */
+                obsolete: obsolete,
+                missplacedDeps: missplacedDeps,
+                missplacedDevDeps: missplacedDevDeps
+              });
             });
           });
         });
