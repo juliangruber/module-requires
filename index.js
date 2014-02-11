@@ -150,7 +150,7 @@ function localRequires(path, fn){
 
     var reqs = mine(src)
       .filter(function(entry){
-        return local(entry.name);
+        return local(entry.name) && !/lib-cov/.test(entry.name);
       })
       .map(prop('name'))
       .filter(unique);
