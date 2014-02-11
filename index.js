@@ -146,7 +146,9 @@ function requires(path, fn){
  * @api private
  */
 
-function localRequires(path, fn){
+function localRequires(path, fn, ignore){
+  ignore = ignore || [];
+  
   fs.readFile(path, 'utf8', function(err, src){
     if (err) return fn(err);
 
@@ -154,16 +156,25 @@ function localRequires(path, fn){
       .filter(function(entry){
         return local(entry.name) && !/lib-cov/.test(entry.name);
       })
-      .map(prop('name'))
+      .map(function(entry){
+        return join(dirname(path), entry.name);
+      })
+      .filter(function(name){
+        return ignore.indexOf(name) == -1;
+      })
       .filter(unique);
     debug('%s requires %j', path, reqs);
     if (!reqs.length) return fn(null, []);
+
+    // ignore from now on
+    reqs.forEach(function(name){
+      ignore.push(name);
+    });
 
     var batch = new Batch;
     reqs.forEach(function(name){
       batch.push(function(done){
         resolve(name, {
-          basedir: dirname(path),
           extensions: ['.js', '.json']
         }, function(err, dest){
           done(null, dest);
@@ -177,7 +188,7 @@ function localRequires(path, fn){
       batch = new Batch;
       resolved.forEach(function(loc){
         batch.push(function(done){
-          localRequires(loc, done);
+          localRequires(loc, done, ignore);
         });
       });
       batch.end(function(err, res){
