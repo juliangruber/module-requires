@@ -192,9 +192,10 @@ function moduleDepsOf(files, fn){
       fs.readFile(path, 'utf8', function(err, source){
         if (err) return done(err);
         var reqs = mine(source)
+          .filter(function(entry){
+            return !local(entry.name) && !builtin(entry.name);
+          })
           .map(prop('name'))
-          .filter(not(local))
-          .filter(not(builtin));
         deps = deps.concat(reqs);
         done();
       });
