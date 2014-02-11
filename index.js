@@ -155,8 +155,10 @@ function requires(path, fn){
               .concat(keys(pkg.devDependencies || {}))
               .filter(unique)
               .filter(not(isIn(allDeps)))
-              .filter(function(name){
-                return name != 'mocha';
+              .map(function(name){
+                return ['mocha', 'jade', 'should'].indexOf(name) > -1
+                  ? '(' + name + ')'
+                  : name;
               });
             
             // missplaced deps
