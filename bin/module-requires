@@ -6,5 +6,19 @@ var dir = process.argv[2] || '.';
 
 requires(dir, function(err, res){
   if (err) throw err;
-  console.log(res);
+  var first = true;
+  Object.keys(res).forEach(function(type){
+    if (res[type].length) {
+      if (first) {
+        console.log();
+        first = false;
+      }
+      console.log('  %s:', type);
+      console.log();
+      res[type].forEach(function(mod){
+        console.log('    - %s', mod);
+      });
+      console.log();
+    }
+  });
 });
