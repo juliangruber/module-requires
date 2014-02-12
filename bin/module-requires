@@ -5,6 +5,8 @@
  */
 
 var requires = require('..');
+var join = require('path').join;
+var fs = require('fs');
 
 // parse argv
 
@@ -51,7 +53,9 @@ if (dirs.length == 1) {
             firstLine = false;
           }
           if (firstBlock) {
-            console.log('  ' + dir);
+            var json = fs.readFileSync(join(dir, 'package.json'), 'utf8');
+            var version = JSON.parse(json).version;
+            console.log('  %s (%s)', dir, version);
             console.log();
             firstBlock = false;
           }
