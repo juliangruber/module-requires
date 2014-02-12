@@ -22,21 +22,24 @@ if (dirs.length == 1) {
   (function next(){
     var dir = dirs.shift();
     if (!dir) return;
-    console.log(dir);
     requires(dir, function(err, res){
       if (err) console.error(err);
-      else print(res);
+      else print(res, dir);
       next();
     });
   })();
 }
 
-function print(res){
+function print(res, dir){
   var first = true;
   Object.keys(res).forEach(function(type){
     if (res[type].length) {
       if (first) {
         console.log();
+        if (dir) {
+          console.log(dir);
+          console.log();
+        }
         first = false;
       }
       console.log('  %s:', type);
