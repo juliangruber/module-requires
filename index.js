@@ -33,6 +33,8 @@ module.exports = requires;
  */
 
 function requires(path, fn){
+  path = presolve(path);
+  
   fs.readFile(join(path, 'package.json'), function(err, json){
     if (err) return fn(err);
     
@@ -41,15 +43,12 @@ function requires(path, fn){
     var pkg = JSON.parse(json);
     var pkgDeps = Object.keys(pkg.dependencies || {}).filter(unique);
     var pkgDevDeps = Object.keys(pkg.devDependencies || {}).filter(unique);
-    var pkgAllDeps = pkgDeps.concat(pkgDevDeps).filter(unique)
+    var pkgAllDeps = pkgDeps.concat(pkgDevDeps).filter(unique);
     
     entries(path, function(err, mains){
       if (err) return fn(err);
       
       debug('mains: %j', mains);
-      mains = mains.map(function(main){
-        return presolve(join(path, main));
-      });
       
       // local files required from mains
       
