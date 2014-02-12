@@ -16,15 +16,48 @@ if (!dirs.length) dirs.push('.');
 if (dirs.length == 1) {
   requires(dirs[0], function(err, res){
     if (err) throw err;
-    print(res);
+    var first = true;
+    Object.keys(res).forEach(function(type){
+      if (res[type].length) {
+        if (first) {
+          console.log();
+          first = false;
+        }
+        console.log('  %s:', type);
+        console.log();
+        res[type].forEach(function(mod){
+          console.log('    - %s', mod);
+        });
+        console.log();
+      }
+    });
   });
 } else {
   (function next(){
     var dir = dirs.shift();
     if (!dir) return;
     requires(dir, function(err, res){
-      if (err) console.error(err);
-      else print(res, dir);
+      if (err) {
+        console.error(err);
+      } else {
+        var first = true;
+        Object.keys(res).forEach(function(type){
+          if (res[type].length) {
+            if (first) {
+              console.log();
+              console.log('  ' + dir);
+              console.log();
+              first = false;
+            }
+            console.log('    %s:', type);
+            console.log();
+            res[type].forEach(function(mod){
+              console.log('      - %s', mod);
+            });
+            console.log();
+          }
+        });
+      }
       next();
     });
   })();
@@ -37,7 +70,7 @@ function print(res, dir){
       if (first) {
         console.log();
         if (dir) {
-          console.log(dir);
+          console.log('  ' + dir);
           console.log();
         }
         first = false;
