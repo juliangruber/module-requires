@@ -33,54 +33,36 @@ if (dirs.length == 1) {
     });
   });
 } else {
+  var firstLine = true;
+  
   (function next(){
     var dir = dirs.shift();
     if (!dir) return;
+    
     requires(dir, function(err, res){
-      if (err) {
-        console.error(err);
-      } else {
-        var first = true;
-        Object.keys(res).forEach(function(type){
-          if (res[type].length) {
-            if (first) {
-              console.log();
-              console.log('  ' + dir);
-              console.log();
-              first = false;
-            }
-            console.log('    %s:', type);
-            console.log();
-            res[type].forEach(function(mod){
-              console.log('      - %s', mod);
-            });
-            console.log();
-          }
-        });
-      }
       next();
-    });
-  })();
-}
-
-function print(res, dir){
-  var first = true;
-  Object.keys(res).forEach(function(type){
-    if (res[type].length) {
-      if (first) {
-        console.log();
-        if (dir) {
-          console.log('  ' + dir);
+      if (err) return console.error(err);
+      var firstBlock = true;
+      
+      Object.keys(res).forEach(function(type){
+        if (res[type].length) {
+          if (firstLine) {
+            console.log();
+            firstLine = false;
+          }
+          if (firstBlock) {
+            console.log('  ' + dir);
+            console.log();
+            firstBlock = false;
+          }
+          console.log('    %s:', type);
+          console.log();
+          res[type].forEach(function(mod){
+            console.log('      - %s', mod);
+          });
           console.log();
         }
-        first = false;
-      }
-      console.log('  %s:', type);
-      console.log();
-      res[type].forEach(function(mod){
-        console.log('    - %s', mod);
       });
-      console.log();
-    }
-  });
+    });
+  })();
 }
