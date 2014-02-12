@@ -8,7 +8,8 @@
 ## Example
 
 ```bash
-$ module-requires
+$ module-requires .
+
   obsolete:
   
     - app-builder
@@ -31,6 +32,18 @@ $ module-requires
     - moment
     - globalize
     - minify
+
+$ module-requires ./node_modules/*
+
+./node_modules/utils
+
+  obsolete:
+
+    - seq
+
+  missplacedDeps:
+
+    - should
 
 ```
 
