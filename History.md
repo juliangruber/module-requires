@@ -1,4 +1,12 @@
 
+0.3.0 / 2014-02-12 
+==================
+
+ * docs
+ * bin: less output
+ * bin: add iteration support
+ * docs
+
 0.2.0 / 2014-02-11 
 ==================
 
