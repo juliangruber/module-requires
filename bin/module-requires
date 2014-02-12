@@ -1,11 +1,37 @@
 #!/usr/bin/env node
 
+/**
+ * Module dependencies.
+ */
+
 var requires = require('..');
 
-var dir = process.argv[2] || '.';
+// parse argv
 
-requires(dir, function(err, res){
-  if (err) throw err;
+var dirs = process.argv.slice(2);
+if (!dirs.length) dirs.push('.');
+
+// go!
+
+if (dirs.length == 1) {
+  requires(dirs[0], function(err, res){
+    if (err) throw err;
+    print(res);
+  });
+} else {
+  (function next(){
+    var dir = dirs.shift();
+    if (!dir) return;
+    console.log(dir);
+    requires(dir, function(err, res){
+      if (err) console.error(err);
+      else print(res);
+      next();
+    });
+  })();
+}
+
+function print(res){
   var first = true;
   Object.keys(res).forEach(function(type){
     if (res[type].length) {
@@ -21,4 +47,4 @@ requires(dir, function(err, res){
       console.log();
     }
   });
-});
+}
