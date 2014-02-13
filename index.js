@@ -121,10 +121,6 @@ function requires(path, fn){
                 .filter(not(isIn(devDeps)));
               
               fn(null, {
-                /* main: local, */
-                /* all: files, */
-                /* deps: deps, */
-                /* devDeps: devDeps, */
                 obsolete: obsolete,
                 missplacedDeps: missplacedDeps,
                 missplacedDevDeps: missplacedDevDeps
@@ -259,11 +255,7 @@ function jsFiles(path, fn){
 }
 
 /**
- * Check if `el` is in `arr`.
- *
- * @param {Array} arr
- * @return {Function}
- * @api private
+ * Utilities.
  */
 
 function isIn(arr){
@@ -272,55 +264,21 @@ function isIn(arr){
   }
 }
 
-/**
- * Invert `fn`.
- *
- * @param {Function} fn
- * @return {Function}
- * @api private
- */
-
 function not(fn){
   return function(){
     return !fn.apply(null, arguments);
   }
 }
 
-/**
- * Check if `name` is that of a local module,
- * e.g. './util' and not 'util'.
- *
- * @param {String} name
- * @return {Boolean}
- * @api private
- */
-
 function local(name){
   return name[0] == '.';
 }
-
-/**
- * Array unique utility.
- *
- * @param {Mixed} el
- * @param {Number} i
- * @param {Element els}
- * @return {Boolean}
- * @api private
- */
 
 function unique(el, i, els){
   return els.indexOf(el) == i;
 }
 
-/**
- * Check if `name` is not a builtin module.
- *
- * @param {String} name
- * @return {Boolena}
- * @api private
- */
-
 function builtin(name){
   return builtins.indexOf(name) > -1;
 }
+
