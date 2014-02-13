@@ -41,8 +41,8 @@ function requires(path, fn){
     // package
     
     var pkg = JSON.parse(json);
-    var pkgDeps = Object.keys(pkg.dependencies || {}).filter(unique);
-    var pkgDevDeps = Object.keys(pkg.devDependencies || {}).filter(unique);
+    var pkgDeps = keys(pkg.dependencies || {});
+    var pkgDevDeps = keys(pkg.devDependencies || {});
     var pkgAllDeps = pkgDeps.concat(pkgDevDeps).filter(unique);
     
     entries(path, function(err, mains){
