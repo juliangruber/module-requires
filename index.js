@@ -223,7 +223,7 @@ function moduleDepsOf(files, fn){
   });
   batch.end(function(err, sources){
     if (err) return fn(err);
-    fn(null, Object.keys(deps));
+    fn(null, keys(deps));
   });
 }
 
