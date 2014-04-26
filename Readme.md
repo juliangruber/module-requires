@@ -1,7 +1,5 @@
 
 # module-requires
-
-  TODO: finish me
   
   Refactor modules by listing obsolete and missplaced dependencies.
 
