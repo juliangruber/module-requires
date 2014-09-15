@@ -51,84 +51,70 @@ function requires(path, fn){
       debug('mains: %j', mains);
       
       // local files required from mains
-      
-      var batch = new Batch;
-      
-      mains.forEach(function(_main){
-        batch.push(function(done){
-          localRequires(_main, done);
-        });
-      });
-      
-      batch.end(function(err, res){
-        if (err) return fn(err);
-        
-        var local = [];
-        res.forEach(function(_local){
-          local = local.concat(_local);
-        });
-        local = mains
-          .concat(local)
-          .filter(unique);
-        
-        // all js files
-        
-        jsFiles(path, function(err, files){
-          if (err) return fn(err);
-          
-          // add bins, json etc
-          
-          files = files.concat(local).filter(unique);
-          
-          // all deps
-          
-          moduleDepsOf(files, function(err, allDeps){
+
+      pipe(
+        mapStream(mains, function(main){
+          return localRequires(_main);
+        }),
+        dedupe(),
+        concat(function(res){
+          var local = res.concat(mains);
+
+          // all js files
+          pipe(jsFiles(path), concat(function(files){
             if (err) return fn(err);
             
-            // main deps
+            // add bins, json etc
+            files = files.concat(local).filter(unique);
             
-            moduleDepsOf(local, function(err, deps){
+            // all deps
+            var mdo = moduleDepsOf();
+            files.forEach(function(f){ mdo.write(f) });
+            mdo.end();
+            pipe(mdo, concat(function(allDeps){
               if (err) return fn(err);
               
-              // dev deps
-              
-              var devDeps = allDeps.filter(not(isIn(deps)));
-               
-              // filter out components etc.
-              
-              allDeps = allDeps.filter(isIn(pkgAllDeps));
-              deps = deps.filter(isIn(allDeps));
-              devDeps = devDeps.filter(isIn(allDeps));
-               
-              // obsolete deps
-              
-              var obsolete = pkgAllDeps
-                .filter(not(isIn(allDeps)))
-                .filter(function(name){
-                  return ['mocha', 'should'].indexOf(name) == -1;
-                });
-              
-              // missplaced deps
-              
-              var missplacedDeps = pkgDeps
-                .filter(isIn(allDeps))
-                .filter(not(isIn(deps)));
-               
-              // missplaced dev deps
+              // main deps
+              moduleDepsOf(local, function(err, deps){
+                if (err) return fn(err);
                 
-              var missplacedDevDeps = pkgDevDeps
-                .filter(isIn(allDeps))
-                .filter(not(isIn(devDeps)));
-              
-              fn(null, {
-                obsolete: obsolete,
-                missplacedDeps: missplacedDeps,
-                missplacedDevDeps: missplacedDevDeps
+                // dev deps
+                var devDeps = allDeps.filter(not(isIn(deps)));
+                 
+                // filter out components etc.
+                allDeps = allDeps.filter(isIn(pkgAllDeps));
+                deps = deps.filter(isIn(allDeps));
+                devDeps = devDeps.filter(isIn(allDeps));
+                 
+                // obsolete deps
+                var obsolete = pkgAllDeps
+                  .filter(not(isIn(allDeps)))
+                  .filter(function(name){
+                    return ['mocha', 'should'].indexOf(name) == -1;
+                  });
+                
+                // missplaced deps
+                var missplacedDeps = pkgDeps
+                  .filter(isIn(allDeps))
+                  .filter(not(isIn(deps)));
+                 
+                // missplaced dev deps
+                var missplacedDevDeps = pkgDevDeps
+                  .filter(isIn(allDeps))
+                  .filter(not(isIn(devDeps)));
+                
+                fn(null, {
+                  obsolete: obsolete,
+                  missplacedDeps: missplacedDeps,
+                  missplacedDevDeps: missplacedDevDeps
+                });
               });
-            });
-          });
-        });
-      });
+            })).on('error', fn);
+          })).on('error', fn)
+          })
+      ).on('error', fn);
+
+      // TODO mapStream(arr, fn);
     });
   });
 }
@@ -137,93 +123,84 @@ function requires(path, fn){
  * Find all local files the file at `path` requires.
  *
  * @param {String} path
- * @param {Function} fn
+ * @return {Stream}
  * @api private
  */
 
-function localRequires(path, fn, ignore){
+function localRequires(src, ignore){
   ignore = ignore || [];
   
-  fs.readFile(path, 'utf8', function(err, src){
-    if (err) return fn(err);
+  var reqs = mine(src)
+    .filter(function(entry){
+      return local(entry.name) && !/lib-cov/.test(entry.name);
+    })
+    .map(function(entry){
+      return join(dirname(path), entry.name);
+    })
+    .filter(function(name){
+      return ignore.indexOf(name) == -1;
+    })
+    .filter(unique);
 
-    var reqs = mine(src)
-      .filter(function(entry){
-        return local(entry.name) && !/lib-cov/.test(entry.name);
-      })
-      .map(function(entry){
-        return join(dirname(path), entry.name);
-      })
-      .filter(function(name){
-        return ignore.indexOf(name) == -1;
-      })
-      .filter(unique);
-    debug('%s requires %j', path, reqs);
-    if (!reqs.length) return fn(null, []);
+  debug('%s requires %j', path, reqs);
 
-    // ignore from now on
-    reqs.forEach(function(name){
-      ignore.push(name);
-    });
-
-    var batch = new Batch;
-    reqs.forEach(function(name){
-      batch.push(function(done){
-        resolve(name, {
-          extensions: ['.js', '.json']
-        }, function(err, dest){
-          done(null, dest);
-        });
-      });
-    });
-    batch.end(function(err, resolved){
-      if (err) return fn(err);
-      resolved = resolved.filter(Boolean);
-
-      batch = new Batch;
-      resolved.forEach(function(loc){
-        batch.push(function(done){
-          localRequires(loc, done, ignore);
-        });
-      });
-      batch.end(function(err, res){
-        if (err) return fn(err);
-        res.forEach(function(_resolved){
-          resolved = resolved.concat(_resolved);
-        });
-        fn(null, resolved.filter(unique));
-      });
-    });
+  // ignore from now on
+  reqs.forEach(function(name){
+    ignore.push(name);
   });
+
+  var r = new Readable({ objectMode: true });
+  r._read = function(){
+    if (!reqs.length) return this.push(null);
+    var req = reqs.shift();
+    resolve(req, {
+      extensions: ['.js', '.json']
+    }, function(_, dest){
+      if (!dest) return r.emit('readable');
+      r.push(dest);
+    })
+  };
+
+  var local = through2.obj(function(src, _, cb){
+    localRequires(src, ignore)
+      .on('error', cb);
+      .on('end', cb);
+      .pipe(local, { end: false });
+  });
+
+  return pipe(r, local, dedupe());
 }
 
 /**
  * Find all node modules `files` depend upon.
  *
- * @param {Array} filter
- * @param {Function} fn
+ * @return {Stream}
  * @api private
  */
 
-function moduleDepsOf(files, fn){
-  var deps = {};
-  var batch = new Batch;
-  files.forEach(function(path){
-    batch.push(function(done){
-      fs.readFile(path, 'utf8', function(err, source){
-        if (err) return done(err);
-        mine(source).forEach(function(entry){
-          if (!local(entry.name) && !builtin(entry.name)) {
-            deps[entry.name] = true;
-          }
-        });
-        done();
+function moduleDepsOf(){
+  var tr = through2.obj(function(file, _, cb){
+    fs.readFile(file, 'utf8', function(err, source){
+      if (err) return cb(err);
+      mine(source).forEach(function(entry){
+        if (!local(entry.name) && !builtin(entry.name)) {
+          tr.push(entry.name);
+        }
       });
+      cb();
     });
-  });
-  batch.end(function(err, sources){
-    if (err) return fn(err);
-    fn(null, keys(deps));
+  };
+  return pipe(tr, dedupe());
+}
+
+function dedupe(){
+  var keys = {};
+  return through2.obj(function(key, _, cb){
+    if (!keys[key]) {
+      keys[key] = true;
+      this.push(key);
+    }
+    cb();
   });
 }
 
@@ -231,27 +208,21 @@ function moduleDepsOf(files, fn){
  * Find all .js files in `path`, except node_modules and components.
  *
  * @param {String} path
- * @param {Function} fn
+ * @return {Stream}
  * @api private
  */
 
-function jsFiles(path, fn){
-  function filter(p){
-    return !/node_modules|components$/.test(p);
-  }
-
-  lsr(path, { filterPath: filter }, function(err, files){
-    if (err) return fn(err);
-
-    var js = [];
-    files.forEach(function(stat){
+function jsFiles(path){
+  function filter(p){ return !/node_modules|components$/.test(p) }
+  return pipe(
+    lsr.stream(path, { filterPath: filter }),
+    through2.obj(function(stat, _, cb){
       if (/\.js$/.test(stat.path)) {
-        js.push(presolve(join(path, stat.path)));
+        this.push(presolve(join(path, stat.path)));
       }
-    });
-
-    fn(null, js);
-  });
+      cb();
+    })
+  );
 }
 
 /**
