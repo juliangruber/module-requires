@@ -4,15 +4,15 @@
   "repository": "segmentio/module-requires",
   "license": "MIT",
   "dependencies": {
-    "builtins": "0.0.2",
-    "mine": "0.0.1",
-    "to-function": "~1.2.0",
+    "builtins": "1.0.3",
+    "mine": "0.1.0",
+    "to-function": "~2.0.6",
     "batch": "~0.5.0",
-    "resolve": "~0.6.1",
-    "graceful-fs": "~2.0.1",
-    "entry-points": "~1.1.0",
+    "resolve": "~1.1.7",
+    "graceful-fs": "~4.1.11",
+    "entry-points": "~1.2.1",
     "lsr": "~1.0.0",
-    "debug": "~0.7.4"
+    "debug": "~2.3.3"
   },
   "bin": {
     "module-requires": "bin/module-requires"
