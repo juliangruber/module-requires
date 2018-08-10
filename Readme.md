@@ -1,5 +1,8 @@
 
 # module-requires
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/juliangruber/module-requires.svg)](https://greenkeeper.io/)
+
   
   Refactor modules by listing obsolete and missplaced dependencies.
 
